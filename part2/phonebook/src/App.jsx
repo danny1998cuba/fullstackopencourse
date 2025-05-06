@@ -6,6 +6,8 @@ import {
   getPersons,
   updatePerson,
 } from "./services/persons";
+import Notification from "./Notification";
+import "./index.css";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -13,11 +15,22 @@ const App = () => {
   const [filterValue, setFilterValue] = useState("");
   const [newNumber, setNewNumber] = useState("");
 
+  const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState(null);
+
   useEffect(() => {
     getPersons().then((res) => {
       setPersons(res.data);
     });
   }, []);
+
+  const throwMessage = (text, messageType) => {
+    setMessage(text);
+    setMessageType(messageType);
+    setTimeout(() => {
+      setMessage(null);
+    }, 2000);
+  };
 
   const onSubmit = (event) => {
     event.preventDefault();
@@ -36,11 +49,23 @@ const App = () => {
           updatePerson(existing.id, {
             ...existing,
             number: newNumberToSet,
-          }).then((res) => {
-            setPersons(
-              persons.map((p) => (p.id === existing.id ? res.data : p))
-            );
-          });
+          })
+            .then((res) => {
+              setPersons(
+                persons.map((p) => (p.id === existing.id ? res.data : p))
+              );
+              throwMessage(
+                `Phone number for ${res.data.name} updated`,
+                "success"
+              );
+            })
+            .catch(() => {
+              setPersons(persons.filter((p) => p.id !== existing.id));
+              throwMessage(
+                `Information of ${existing.name} has already been removed from server`,
+                "error"
+              );
+            });
         }
       } else {
         createPerson({
@@ -49,6 +74,7 @@ const App = () => {
           id: String(persons.length + 1),
         }).then((res) => {
           setPersons([...persons, res.data]);
+          throwMessage(`Added ${res.data.name}`, "success");
         });
       }
       setNewName("");
@@ -90,6 +116,8 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={message} type={messageType} />
+
       <Filter
         activeFilter={filterValue}
         onFilter={(e) => setFilterValue(e.target.value)}
