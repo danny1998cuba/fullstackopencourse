@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import { useState } from "react";
-import axios from "axios";
+import {
+  createPerson,
+  deletePerson,
+  getPersons,
+  updatePerson,
+} from "./services/persons";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -9,7 +14,7 @@ const App = () => {
   const [newNumber, setNewNumber] = useState("");
 
   useEffect(() => {
-    axios.get("http://localhost:3001/persons").then((res) => {
+    getPersons().then((res) => {
       setPersons(res.data);
     });
   }, []);
@@ -21,17 +26,30 @@ const App = () => {
     const newNumberToSet = newNumber.trim();
 
     if (newNameToSet !== "" && newNumberToSet !== "") {
-      if (persons.some((p) => p.name === newNameToSet)) {
-        alert(`${newNameToSet} is already added to phonebook`);
-      } else {
-        setPersons([
-          ...persons,
-          {
-            name: newNameToSet,
+      const existing = persons.find((p) => p.name === newNameToSet);
+
+      if (existing) {
+        const conf = confirm(
+          `${newNameToSet} is already added to phonebook, replace the old number with a new one?`
+        );
+        if (conf) {
+          updatePerson(existing.id, {
+            ...existing,
             number: newNumberToSet,
-            id: String(persons.length + 1),
-          },
-        ]);
+          }).then((res) => {
+            setPersons(
+              persons.map((p) => (p.id === existing.id ? res.data : p))
+            );
+          });
+        }
+      } else {
+        createPerson({
+          name: newNameToSet,
+          number: newNumberToSet,
+          id: String(persons.length + 1),
+        }).then((res) => {
+          setPersons([...persons, res.data]);
+        });
       }
       setNewName("");
       setNewNumber("");
@@ -49,6 +67,16 @@ const App = () => {
         break;
       default:
         console.log("Invalid field");
+    }
+  };
+
+  const onDelete = (person) => {
+    const conf = confirm(`Delete ${person.name}?`);
+
+    if (conf) {
+      deletePerson(person.id).then(() => {
+        setPersons(persons.filter((p) => p.id !== person.id));
+      });
     }
   };
 
@@ -75,7 +103,7 @@ const App = () => {
       />
 
       <h3>Numbers</h3>
-      <Persons persons={shownPersons} />
+      <Persons persons={shownPersons} onDelete={onDelete} />
     </div>
   );
 };
@@ -112,12 +140,13 @@ const PersonForm = ({ onSubmit, fieldsValue, onFieldChange }) => {
   );
 };
 
-const Persons = ({ persons }) => {
+const Persons = ({ persons, onDelete }) => {
   return (
     <div>
       {persons.map((person) => (
         <div key={person.id}>
           {person.name} {person.number}
+          <button onClick={() => onDelete(person)}>delete</button>
         </div>
       ))}
     </div>
