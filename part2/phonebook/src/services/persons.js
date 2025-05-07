@@ -1,5 +1,6 @@
 import axios from 'axios'
-const urlBase = "http://localhost:3001/persons"
+// const urlBase = "http://localhost:3001/persons"
+const urlBase = "/api/persons" // Change for part 3
 
 export const getPersons = () => {
     return axios.get(urlBase)

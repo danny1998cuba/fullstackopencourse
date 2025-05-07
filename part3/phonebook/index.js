@@ -1,5 +1,7 @@
 const express = require('express')
 const morgan = require('morgan');
+const cors = require('cors');
+const path = require('path')
 
 let persons = [
     {
@@ -24,13 +26,16 @@ let persons = [
     }
 ]
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
 const app = express()
 app.use(express.json());
+app.use(cors())
 
 morgan.token('body', req => { return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'));
+
+app.use(express.static(path.join(__dirname, 'dist')))
 
 app.get("/api/persons", (req, res) => {
     res.json(persons)
@@ -55,12 +60,14 @@ app.post("/api/persons", (req, res) => {
     if (persons.some(p => p.name === name))
         return res.status(500).json({ error: "name must be unique" })
 
-    persons.push({
+    const newPerson = {
         name, number,
         id: String(Math.ceil(Math.random() * 500000))
-    })
+    }
 
-    res.sendStatus(200)
+    persons.push(newPerson)
+
+    res.status(200).json(newPerson)
 })
 
 app.delete("/api/persons/:id", (req, res) => {
@@ -80,3 +87,5 @@ app.get("/info", (req, res) => {
 })
 
 app.listen(PORT, () => console.log(`App running in http://localhost:${PORT}`))
+
+module.exports = app
