@@ -29,7 +29,7 @@ const App = () => {
     setMessageType(messageType);
     setTimeout(() => {
       setMessage(null);
-    }, 2000);
+    }, 5000);
   };
 
   const onSubmit = (event) => {
@@ -59,12 +59,16 @@ const App = () => {
                 "success"
               );
             })
-            .catch(() => {
-              setPersons(persons.filter((p) => p.id !== existing.id));
-              throwMessage(
-                `Information of ${existing.name} has already been removed from server`,
-                "error"
-              );
+            .catch((e) => {
+              if (e.status === 404) {
+                setPersons(persons.filter((p) => p.id !== existing.id));
+                throwMessage(
+                  `Information of ${existing.name} has already been removed from server`,
+                  "error"
+                );
+              } else {
+                throwMessage(e.response.data.error, "error");
+              }
             });
         }
       } else {
@@ -72,10 +76,14 @@ const App = () => {
           name: newNameToSet,
           number: newNumberToSet,
           id: String(persons.length + 1),
-        }).then((res) => {
-          setPersons([...persons, res.data]);
-          throwMessage(`Added ${res.data.name}`, "success");
-        });
+        })
+          .then((res) => {
+            setPersons([...persons, res.data]);
+            throwMessage(`Added ${res.data.name}`, "success");
+          })
+          .catch((e) => {
+            throwMessage(e.response.data.error, "error");
+          });
       }
       setNewName("");
       setNewNumber("");
