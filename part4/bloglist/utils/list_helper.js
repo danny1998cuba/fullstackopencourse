@@ -23,7 +23,6 @@ const mostBlogs = (blogs) => {
 const mostLikes = (blogs) => {
     const grouped = _.groupBy(blogs, 'author')
     const array = Object.keys(grouped).map(k => ({ author: k, likes: grouped[k].reduce((acc, b) => acc += b.likes, 0) }))
-    console.log(array)
     const max = Math.max(...array.map(b => b.likes))
     return array.find(b => b.likes === max)
 }
