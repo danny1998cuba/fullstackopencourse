@@ -4,19 +4,26 @@ const supertest = require('supertest')
 const { beforeEach, test, after, describe } = require('node:test')
 const assert = require('node:assert')
 const Blog = require('../models/blog')
-const { blogs, getAllBlogsDb, notSavedId } = require('../utils/test-helpers')
+const User = require('../models/user')
+const { blogs, getAllBlogsDb, notSavedId, userTest } = require('../utils/test-helpers')
 
 const api = supertest(app)
+let token = null
 
 beforeEach(async () => {
+    await User.deleteMany({});
+    const res = await api.post("/api/users").send(userTest)
     await Blog.deleteMany({});
-    await Blog.insertMany(blogs)
+    await Blog.insertMany(blogs.map(b => ({ ...b, user: res.body.id })))
+
+    const resp = await api.post("/api/login").send({ username: userTest.username, password: userTest.password })
+    token = resp.body.token
 })
 
-describe.only("api blogs", () => {
-
+describe("api blogs", () => {
     test("get blogs returns the right amount and right content-type", async () => {
         const res = await api.get("/api/blogs")
+            .auth(token, { type: 'bearer' })
             .expect(200)
             .expect('Content-Type', /application\/json/)
 
@@ -24,7 +31,7 @@ describe.only("api blogs", () => {
     })
 
     test("the unique identifier is named id", async () => {
-        const res = await api.get("/api/blogs")
+        const res = await api.get("/api/blogs").auth(token, { type: 'bearer' })
         const valid = res.body.every(b => 'id' in b)
         assert.strictEqual(valid, true)
     })
@@ -41,6 +48,7 @@ describe.only("api blogs", () => {
             const response = await api
                 .post('/api/blogs')
                 .send(newData)
+                .auth(token, { type: 'bearer' })
                 .expect(201)
                 .expect('Content-Type', /application\/json/)
 
@@ -49,6 +57,30 @@ describe.only("api blogs", () => {
 
             assert.strictEqual(inDb.length, blogs.length + 1)
             assert.deepStrictEqual(fromDb, response.body)
+        })
+
+        test("save a blog without token returns an Unauthorized response", async () => {
+            const newData = {
+                title: "Otro de pruebas",
+                author: "Daniel",
+                url: "https://example.com",
+                likes: 3
+            }
+
+            await api
+                .post('/api/blogs')
+                .send(newData)
+                .expect(401)
+                .expect('Content-Type', /application\/json/)
+                .expect(res => {
+                    if (!('error' in res.body)) {
+                        throw new Error('Missing error message');
+                    }
+                })
+
+            const inDb = await getAllBlogsDb()
+
+            assert.strictEqual(inDb.length, blogs.length)
         })
 
         test("likes property is 0 by default", async () => {
@@ -61,6 +93,7 @@ describe.only("api blogs", () => {
             const response = await api
                 .post('/api/blogs')
                 .send(newData)
+                .auth(token, { type: 'bearer' })
                 .expect(201)
                 .expect('Content-Type', /application\/json/)
 
@@ -81,11 +114,13 @@ describe.only("api blogs", () => {
             await api
                 .post('/api/blogs')
                 .send(newDataNoTitle)
+                .auth(token, { type: 'bearer' })
                 .expect(400)
 
             await api
                 .post('/api/blogs')
                 .send(newDataNoUrl)
+                .auth(token, { type: 'bearer' })
                 .expect(400)
         })
     })
@@ -93,7 +128,7 @@ describe.only("api blogs", () => {
     describe("deleting a blog", () => {
         test("delete an existing blog works", async () => {
             const inDb = await getAllBlogsDb()
-            await api.delete(`/api/blogs/${inDb[0].id}`).expect(204)
+            await api.delete(`/api/blogs/${inDb[0].id}`).auth(token, { type: 'bearer' }).expect(204)
             const inDbAfter = await getAllBlogsDb()
 
             assert.strictEqual(inDbAfter.length, inDb.length - 1)
@@ -101,20 +136,39 @@ describe.only("api blogs", () => {
         })
         test("delete with a wrong id fails", async () => {
             const invalidId = await notSavedId()
-            await api.delete(`/api/blogs/${invalidId}`).expect(404)
+            await api.delete(`/api/blogs/${invalidId}`).auth(token, { type: 'bearer' }).expect(404)
         })
         test("delete with a wrong formatted id fails", async () => {
             const invalidId = "6f46ds46"
-            await api.delete(`/api/blogs/${invalidId}`).expect(400)
+            await api.delete(`/api/blogs/${invalidId}`).auth(token, { type: 'bearer' }).expect(400)
+        })
+        test("delete an existing blog without token returns an Unauthorized response", async () => {
+            const inDb = await getAllBlogsDb()
+            await api.delete(`/api/blogs/${inDb[0].id}`)
+                .expect(401)
+                .expect('Content-Type', /application\/json/)
+                .expect(res => {
+                    if (!('error' in res.body)) {
+                        throw new Error('Missing error message');
+                    }
+                })
+            const inDbAfter = await getAllBlogsDb()
+
+            assert.strictEqual(inDbAfter.length, inDb.length)
+            assert(inDbAfter.some(b => b.id === inDb[0].id))
         })
     })
 
     describe("update a blog", () => {
         test("update likes in an existing blog works", async () => {
             const inDb = await getAllBlogsDb()
-            await api.put(`/api/blogs/${inDb[0].id}`).send({
-                likes: 8
-            }).expect(200).expect("Content-Type", /application\/json/)
+            await api.put(`/api/blogs/${inDb[0].id}`)
+                .send({
+                    likes: 8
+                })
+                .auth(token, { type: 'bearer' })
+                .expect(200)
+                .expect("Content-Type", /application\/json/)
 
             const inDbAfter = await getAllBlogsDb()
 
@@ -125,11 +179,11 @@ describe.only("api blogs", () => {
         })
         test("update with a wrong id fails", async () => {
             const invalidId = await notSavedId()
-            await api.put(`/api/blogs/${invalidId}`, { likes: 8 }).expect(404)
+            await api.put(`/api/blogs/${invalidId}`, { likes: 8 }).auth(token, { type: 'bearer' }).expect(404)
         })
         test("update with a wrong formatted id fails", async () => {
             const invalidId = "6f46ds46"
-            await api.put(`/api/blogs/${invalidId}`, { likes: 8 }).expect(400)
+            await api.put(`/api/blogs/${invalidId}`, { likes: 8 }).auth(token, { type: 'bearer' }).expect(400)
         })
     })
 })

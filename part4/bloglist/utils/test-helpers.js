@@ -1,4 +1,5 @@
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 const blogs = [
     {
@@ -39,8 +40,14 @@ const blogs = [
     }
 ]
 
-const getAllBlogsDb = async () => {
-    return (await Blog.find({})).map(e => e.toJSON())
+const userTest = {
+    name: "Daniel",
+    username: "danny98",
+    password: "Daniel123"
+}
+
+const getAllBlogsDb = async (populate = false) => {
+    return (await Blog.find({}).populate(populate ? [{ path: "user", select: "id username name" }] : undefined)).map(e => e.toJSON())
 }
 
 const notSavedId = async () => {
@@ -54,4 +61,19 @@ const notSavedId = async () => {
     return saved._id.toString()
 }
 
-module.exports = { blogs, getAllBlogsDb, notSavedId } 
+const getAllUsersDb = async () => {
+    return (await User.find({})).map(e => e.toJSON())
+}
+
+const notSavedIdUser = async () => {
+    const newUser = new User({
+        name: "Daniel",
+        username: "danny98test",
+        password: "Daniel123"
+    })
+    const saved = await newUser.save()
+    await newUser.deleteOne()
+    return saved._id.toString()
+}
+
+module.exports = { blogs, getAllBlogsDb, notSavedId, getAllUsersDb, notSavedIdUser, userTest } 
