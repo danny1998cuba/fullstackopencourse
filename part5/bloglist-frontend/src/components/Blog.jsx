@@ -1,8 +1,7 @@
 import { useState } from "react";
-import blogService from "../services/blogs";
 import PropTypes from "prop-types";
 
-const Blog = ({ blog, user, loadBlogs }) => {
+const Blog = ({ blog, handleLikeProps, handleDeleteProps, user }) => {
   const [openDetails, setOpenDetails] = useState(false);
 
   const blogStyle = {
@@ -13,31 +12,18 @@ const Blog = ({ blog, user, loadBlogs }) => {
     marginBottom: 5,
   };
 
-  const handleLike = async () => {
+  const handleLike = () => {
     const toSave = { ...blog, user: blog.user.id, likes: blog.likes + 1 };
-    try {
-      await blogService.updateBlog(blog.id, toSave, user.token);
-      loadBlogs();
-    } catch (error) {
-      console.error(error);
-    }
+    handleLikeProps(blog.id, toSave);
   };
 
-  const handleDelete = async () => {
-    const conf = confirm(`Remove blog ${blog.title} by ${blog.author}?`);
-    if (conf) {
-      try {
-        await blogService.deleteBlog(blog.id, user.token);
-        loadBlogs();
-      } catch (error) {
-        console.error(error);
-      }
-    }
+  const handleDelete = () => {
+    handleDeleteProps(blog.id, `Remove blog ${blog.title} by ${blog.author}?`);
   };
 
   return (
     <div style={blogStyle}>
-      <div>
+      <div data-testid="test-text-section">
         {blog.title} {blog.author}
         &nbsp;
         <button onClick={() => setOpenDetails(!openDetails)}>
@@ -47,16 +33,16 @@ const Blog = ({ blog, user, loadBlogs }) => {
 
       {openDetails && (
         <div>
-          <div>
+          <div data-testid="test-url-section">
             <a href={blog.url} target="_blank" rel="noreferrer">
               {blog.url}
             </a>
           </div>
-          <div>
+          <div data-testid="test-likes-section">
             likes {blog.likes}
             <button onClick={handleLike}>like</button>
           </div>
-          <div>{blog.author}</div>
+          <div>{blog.user.name}</div>
 
           {blog.user.username === user.username && (
             <button
@@ -79,7 +65,8 @@ const Blog = ({ blog, user, loadBlogs }) => {
 Blog.propTypes = {
   blog: PropTypes.object.isRequired,
   user: PropTypes.object.isRequired,
-  loadBlogs: PropTypes.func.isRequired,
+  handleLikeProps: PropTypes.func.isRequired,
+  handleDeleteProps: PropTypes.func.isRequired,
 };
 
 export default Blog;

@@ -1,9 +1,8 @@
 import { useRef, useState } from "react";
 import PropTypes from "prop-types";
-import blogsService from "../services/blogs";
 import Togglable from "./Togglable";
 
-const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
+const CreateBlogForm = ({ createBlog, throwMessage }) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [url, setUrl] = useState("");
@@ -13,26 +12,12 @@ const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (title !== "" && author !== "" && url !== "") {
-      try {
-        const response = await blogsService.createBlog(
-          { title, url, author },
-          userToken
-        );
-        throwMessage(
-          `A new blog ${response.title} by ${response.author} added`,
-          "success"
-        );
+      togglableRef?.current?.toggleVisibility();
+      createBlog({ title, author, url });
 
-        togglableRef?.current?.toggleVisibility();
-
-        setTitle("");
-        setAuthor("");
-        setUrl("");
-
-        loadBlogs();
-      } catch (exception) {
-        throwMessage(exception.message, "error");
-      }
+      setTitle("");
+      setAuthor("");
+      setUrl("");
     } else {
       throwMessage(
         "You should provide all information about the blog",
@@ -49,6 +34,7 @@ const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
         <div>
           title:
           <input
+            id="title"
             type="text"
             value={title}
             name="title"
@@ -58,6 +44,7 @@ const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
         <div>
           author:
           <input
+            id="author"
             type="text"
             value={author}
             name="author"
@@ -67,6 +54,7 @@ const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
         <div>
           url:
           <input
+            id="url"
             type="text"
             value={url}
             name="url"
@@ -80,9 +68,8 @@ const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
 };
 
 CreateBlogForm.propTypes = {
-  loadBlogs: PropTypes.func.isRequired,
+  createBlog: PropTypes.func.isRequired,
   throwMessage: PropTypes.func.isRequired,
-  userToken: PropTypes.string.isRequired,
 };
 
 export default CreateBlogForm;

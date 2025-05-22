@@ -43,6 +43,41 @@ const App = () => {
     setUser(null);
   };
 
+  const handleCreate = async (newBlog) => {
+    try {
+      const response = await blogService.createBlog(newBlog, user.token);
+      throwMessage(
+        `A new blog ${response.title} by ${response.author} added`,
+        "success"
+      );
+
+      loadBlogs();
+    } catch (exception) {
+      throwMessage(exception.message, "error");
+    }
+  };
+
+  const handleLike = async (id, newBlog) => {
+    try {
+      await blogService.updateBlog(id, newBlog, user.token);
+      loadBlogs();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async (id, confirmMessage) => {
+    const conf = confirm(confirmMessage);
+    if (conf) {
+      try {
+        await blogService.deleteBlog(id, user.token);
+        loadBlogs();
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
   return (
     <div>
       <Notification message={message} type={messageType} />
@@ -61,9 +96,8 @@ const App = () => {
           </p>
 
           <CreateBlogForm
-            loadBlogs={loadBlogs}
             throwMessage={throwMessage}
-            userToken={user.token}
+            createBlog={handleCreate}
           />
 
           <div style={{ marginTop: "10px" }}>
@@ -74,7 +108,8 @@ const App = () => {
                   key={blog.id}
                   blog={blog}
                   user={user}
-                  loadBlogs={loadBlogs}
+                  handleDeleteProps={handleDelete}
+                  handleLikeProps={handleLike}
                 />
               ))}
           </div>
