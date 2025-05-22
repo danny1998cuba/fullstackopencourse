@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import PropTypes from "prop-types";
 import loginService from "../services/login";
 import { LOGGED_USER_LS_KEY } from "../lib/constants";
 
@@ -51,6 +52,11 @@ const LoginForm = ({ setUser, throwMessage }) => {
       <button type="submit">login</button>
     </form>
   );
+};
+
+LoginForm.propTypes = {
+  setUser: PropTypes.func.isRequired,
+  throwMessage: PropTypes.func.isRequired,
 };
 
 export default LoginForm;

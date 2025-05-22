@@ -1,10 +1,14 @@
-import React, { useState } from "react";
+import { useRef, useState } from "react";
+import PropTypes from "prop-types";
 import blogsService from "../services/blogs";
+import Togglable from "./Togglable";
 
 const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [url, setUrl] = useState("");
+
+  const togglableRef = useRef();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,6 +22,8 @@ const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
           `A new blog ${response.title} by ${response.author} added`,
           "success"
         );
+
+        togglableRef?.current?.toggleVisibility();
 
         setTitle("");
         setAuthor("");
@@ -36,39 +42,47 @@ const CreateBlogForm = ({ loadBlogs, throwMessage, userToken }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>create new</h2>
+    <Togglable buttonLabel="create new blog" ref={togglableRef}>
+      <form onSubmit={handleSubmit}>
+        <h2>create new</h2>
 
-      <div>
-        title:
-        <input
-          type="text"
-          value={title}
-          name="title"
-          onChange={({ target }) => setTitle(target.value)}
-        />
-      </div>
-      <div>
-        author:
-        <input
-          type="text"
-          value={author}
-          name="author"
-          onChange={({ target }) => setAuthor(target.value)}
-        />
-      </div>
-      <div>
-        url:
-        <input
-          type="text"
-          value={url}
-          name="url"
-          onChange={({ target }) => setUrl(target.value)}
-        />
-      </div>
-      <button type="submit">create</button>
-    </form>
+        <div>
+          title:
+          <input
+            type="text"
+            value={title}
+            name="title"
+            onChange={({ target }) => setTitle(target.value)}
+          />
+        </div>
+        <div>
+          author:
+          <input
+            type="text"
+            value={author}
+            name="author"
+            onChange={({ target }) => setAuthor(target.value)}
+          />
+        </div>
+        <div>
+          url:
+          <input
+            type="text"
+            value={url}
+            name="url"
+            onChange={({ target }) => setUrl(target.value)}
+          />
+        </div>
+        <button type="submit">create</button>
+      </form>
+    </Togglable>
   );
+};
+
+CreateBlogForm.propTypes = {
+  loadBlogs: PropTypes.func.isRequired,
+  throwMessage: PropTypes.func.isRequired,
+  userToken: PropTypes.string.isRequired,
 };
 
 export default CreateBlogForm;

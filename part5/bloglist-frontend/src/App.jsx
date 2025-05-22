@@ -66,9 +66,18 @@ const App = () => {
             userToken={user.token}
           />
 
-          {blogs.map((blog) => (
-            <Blog key={blog.id} blog={blog} />
-          ))}
+          <div style={{ marginTop: "10px" }}>
+            {blogs
+              .sort((b1, b2) => b2.likes - b1.likes)
+              .map((blog) => (
+                <Blog
+                  key={blog.id}
+                  blog={blog}
+                  user={user}
+                  loadBlogs={loadBlogs}
+                />
+              ))}
+          </div>
         </>
       )}
     </div>
