@@ -71,6 +71,10 @@ const App = () => {
     if (conf) {
       try {
         await blogService.deleteBlog(id, user.token);
+        throwMessage(
+          `Blog entry removed`,
+          "success"
+        );
         loadBlogs();
       } catch (error) {
         console.error(error);
@@ -100,7 +104,7 @@ const App = () => {
             createBlog={handleCreate}
           />
 
-          <div style={{ marginTop: "10px" }}>
+          <div style={{ marginTop: "10px" }} id="blogs-list">
             {blogs
               .sort((b1, b2) => b2.likes - b1.likes)
               .map((blog) => (

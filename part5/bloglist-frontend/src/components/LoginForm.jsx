@@ -30,7 +30,7 @@ const LoginForm = ({ setUser, throwMessage }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} id="login-form">
       <div>
         username
         <input

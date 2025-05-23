@@ -22,7 +22,7 @@ const Blog = ({ blog, handleLikeProps, handleDeleteProps, user }) => {
   };
 
   return (
-    <div style={blogStyle}>
+    <div style={blogStyle} className="blog">
       <div data-testid="test-text-section">
         {blog.title} {blog.author}
         &nbsp;
