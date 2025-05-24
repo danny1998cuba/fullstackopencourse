@@ -1,4 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
+import { triggerNotificationHelper } from "./notificationReducer";
+import anecdoteService from "../services/anecdote";
 
 const anecdotesAtStart = [
   'If it hurts, do it more often',
@@ -11,7 +13,7 @@ const anecdotesAtStart = [
 
 export const getId = () => (100000 * Math.random()).toFixed(0)
 
-const asObject = (anecdote) => {
+export const asObject = (anecdote) => {
   return {
     content: anecdote,
     id: getId(),
@@ -23,14 +25,49 @@ const slice = createSlice({
   name: "anecdote",
   initialState: anecdotesAtStart.map(asObject),
   reducers: {
-    voteAction(state, action) {
-      return state.map(a => a.id === action.payload.id ? { ...a, votes: a.votes + 1 } : a)
+    updateAction(state, action) {
+      return state.map(a => a.id === action.payload.id ? action.payload : a)
     },
     createNewAnecdote(state, action) {
-      state.push(asObject(action.payload))
-    }
+      state.push(action.payload)
+    },
+    setAnecdotes(state, action) {
+      return action.payload
+    },
   }
 })
 
-export const { createNewAnecdote, voteAction } = slice.actions
+export const initializeAnecdotes = () => {
+  return async (dispatch) => {
+    const res = await anecdoteService.getAll()
+    dispatch(setAnecdotes(res))
+  }
+}
+
+export const createAnecdoteHelper = (content) => {
+  return async (dispatch) => {
+    const res = await anecdoteService.createNew(content);
+
+    dispatch(createNewAnecdote(res));
+    dispatch(triggerNotificationHelper(`Anecdote "${content}" added`));
+  }
+}
+
+export const voteHelper = (id) => {
+  return async (dispatch, getState) => {
+    const selected = getState().anecdotes?.find(a => a.id === id)
+
+    if (selected) {
+      const res = await anecdoteService.updateOne(id, {
+        ...selected, votes: selected.votes + 1
+      });
+
+      dispatch(updateAction(res));
+      dispatch(triggerNotificationHelper(`you voted "${selected.content}"`, 10));
+    }
+
+  }
+}
+
+export const { createNewAnecdote, updateAction, setAnecdotes } = slice.actions
 export default slice.reducer

@@ -1,17 +1,12 @@
 import { useDispatch, useSelector } from "react-redux";
-import { voteAction } from "../reducers/anecdoteReducer";
-import { triggerNotificationHelper } from "../reducers/notificationReducer";
+import { voteHelper } from "../reducers/anecdoteReducer";
 
 const AnecdoteList = () => {
   const dispatch = useDispatch();
   const { anecdotes, filter } = useSelector((state) => state);
 
   const vote = (id) => {
-    dispatch(voteAction({ id }));
-    triggerNotificationHelper(
-      dispatch,
-      `you voted "${anecdotes.find((a) => a.id === id)?.content}"`
-    );
+    dispatch(voteHelper(id));
   };
 
   return (

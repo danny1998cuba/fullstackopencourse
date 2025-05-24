@@ -7,7 +7,7 @@ const slice = createSlice({
   name: "notification",
   initialState,
   reducers: {
-    triggerNotification(state, action) {
+    setNotification(state, action) {
       return action.payload
     },
     removeNotification(state, action) {
@@ -18,14 +18,17 @@ const slice = createSlice({
   }
 })
 
-export const triggerNotificationHelper = (dispatch, text) => {
-  const notId = getId();
-  dispatch(triggerNotification({ text, id: notId, }));
+const { setNotification, removeNotification } = slice.actions
 
-  setTimeout(() => {
-    dispatch(removeNotification({ id: notId }));
-  }, 5000);
+export const triggerNotificationHelper = (text, delay = 5) => {
+  return (dispatch) => {
+    const notId = getId();
+    dispatch(setNotification({ text, id: notId, }));
+
+    setTimeout(() => {
+      dispatch(removeNotification({ id: notId }));
+    }, delay * 1000);
+  }
 }
 
-export const { triggerNotification, removeNotification } = slice.actions
 export default slice.reducer
