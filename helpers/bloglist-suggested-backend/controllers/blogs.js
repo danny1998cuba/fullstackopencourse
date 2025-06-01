@@ -56,16 +56,10 @@ router.delete('/:id', userExtractor, async (request, response) => {
     response.status(204).end()
 })
 
-router.put('/:id', userExtractor, async (request, response) => {
-    const user = request.user
-
+router.put('/:id', async (request, response) => {
     const blog = await Blog.findById(request.params.id)
     if (!blog) {
         return response.status(204).end()
-    }
-
-    if (user.id.toString() !== blog.user.toString()) {
-        return response.status(403).json({ error: 'user not authorized' })
     }
 
     const body = request.body
@@ -76,7 +70,17 @@ router.put('/:id', userExtractor, async (request, response) => {
         likes: body.likes
     }
 
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, newBlog, { new: true })
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, newBlog, { new: true, populate: [{ path: "user", select: "username name" }] })
+    response.json(updatedBlog)
+})
+
+router.post('/:id/comments', async (request, response) => {
+    const blog = await Blog.findById(request.params.id)
+    if (!blog) {
+        return response.status(404).end()
+    }
+
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, { $push: { comments: request.body.comment } }, { new: true, populate: [{ path: "user", select: "username name" }] })
     response.json(updatedBlog)
 })
 
